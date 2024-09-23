@@ -6,7 +6,7 @@
 
 ## [✨JavaScript](./JavaScript/index.md)
 
-## [✨React]
+## [✨React](./React/index.md)
 
 ## [✨CS](./CS/index.md)
 
