@@ -10,6 +10,6 @@
 
 ## [✨CS](./CS/index.md)
 
-## [✨Git]
+## [✨Git](./Git/index.md)
 
 ## [💡자료구조](./DataStructure/index.md)
