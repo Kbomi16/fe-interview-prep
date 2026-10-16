@@ -139,9 +139,11 @@ FLUX는 Facebook에서 개발한 아키텍처로, 애플리케이션의 데이�
 ![alt text](image-3.png)
 리액트 컴포넌트는 생명 주기 동안 여러 메서드를 호출합니다. 주요 메서드는 다음과 같습니다:
 
-- **Mounting**: `componentDidMount`, `componentWillMount`
-- **Updating**: `componentDidUpdate`, `shouldComponentUpdate`
+- **Mounting**: `constructor`, `render`, `componentDidMount`
+- **Updating**: `getDerivedStateFromProps`, `shouldComponentUpdate`, `render`, `getSnapshotBeforeUpdate`, `componentDidUpdate`
 - **Unmounting**: `componentWillUnmount`
+
+`componentWillMount`, `componentWillReceiveProps`, `componentWillUpdate`는 16.3부터 `UNSAFE_` 접두사가 붙는 레거시 메서드입니다. 신규 코드는 함수 컴포넌트와 `useEffect`로 같은 시점을 표현합니다. 클래스 라이프사이클은 기존 코드를 읽을 때 알고 있으면 됩니다.
 
 ### ✅ 이해
 
@@ -178,11 +180,11 @@ FLUX는 Facebook에서 개발한 아키텍처로, 애플리케이션의 데이�
 
 ### ✅ 리액트에서 setState는 비동기 동작인가요 동기 동작인가요?
 
-`setState`는 **비동기 동작**입니다. 여러 상태 업데이트가 있을 경우 최적화를 위해 배치 처리됩니다.
+`setState`와 `useState`의 setter는 Promise를 반환하지 않습니다. 업데이트를 예약하고, 리액트가 이어서 렌더를 스케줄합니다. 같은 턴의 여러 업데이트는 한 번의 렌더로 배치됩니다. React 18부터는 리액트 이벤트 핸들러뿐 아니라 `setTimeout`, Promise, 네이티브 이벤트에서도 자동 배치가 적용됩니다. 이전 상태를 기준으로 고칠 때는 `setState(prev => next)`처럼 함수형 업데이트를 씁니다.
 
 ### ✅ setState가 비동기 동작을 취했을 때 얻을 수 있는 이점은 무엇인가요?
 
-비동기 동작 덕분에 성능을 개선할 수 있으며, 여러 상태 변경이 있을 경우 한 번의 리렌더링으로 최적화할 수 있습니다.
+여러 `setState`가 한 턴에 모여 한 번만 렌더되므로, 중간 상태를 화면에 그리는 비용을 줄입니다. 자동 배치 덕분에 이벤트 밖 비동기 콜백에서 상태를 여러 번 바꿔도 렌더가 호출 횟수만큼 늘지 않습니다.
 
 ### ✅ useLayoutEffect는 무엇인가요?
 
@@ -205,7 +207,7 @@ SPA(싱글 페이지 애플리케이션)는 웹 애플리케이션의 일종으�
 
 ### ✅ SPA의 단점
 
-1. **SEO 최적화 어려움**: 클라이언트 측 렌더링으로 인해 검색 엔진 크롤러가 내용을 인식하기 어려울 수 있습니다.
+1. **SEO**: 클라이언트에서만 그리는 SPA는 크롤러가 본문을 보기 어렵습니다. SSR, SSG, ISR과 Metadata API로 초기 HTML을 주면 이 한계는 대부분 사라집니다.
 2. **초기 로딩 시간**: 모든 JavaScript와 리소스를 초기 로딩 시 불러와야 하므로 시간이 걸릴 수 있습니다.
 3. **자바스크립트 의존성**: 자바스크립트가 비활성화된 환경에서 제대로 작동하지 않을 수 있습니다.
 
@@ -217,14 +219,14 @@ SSR(서버 사이드 렌더링)은 웹 페이지의 내용을 서버에서 미�
 
 SEO(검색 엔진 최적화)는 웹사이트나 웹 페이지의 가시성을 향상시키기 위해 다양한 기법과 전략을 사용하는 과정입니다. 이를 통해 검색 엔진 결과 페이지에서 더 높은 순위를 얻고, 더 많은 방문자를 유도할 수 있습니다.
 
-### ✅ TTV, TTI
+### ✅ TTFB, TTI
 
-- **TTV(Time to First Byte)**: 클라이언트가 요청한 후 서버가 첫 번째 바이트를 보내기까지 걸리는 시간.
-- **TTI(Time to Interactive)**: 페이지가 사용자와 상호작용할 준비가 완료되는 시간으로, 웹 페이지가 로드된 후 사용자가 조작할 수 있는 시점을 나타냅니다.
+- **TTFB(Time to First Byte)**: 요청 후 응답의 첫 바이트가 도착하기까지 걸린 시간입니다. 예전 정리의 TTV는 이 지표의 표준 이름이 아닙니다.
+- **TTI(Time to Interactive)**: 메인 스레드가 안정되어 사용자가 조작할 수 있게 되는 시점입니다. 실험실 쪽에 가까운 지표이고, Core Web Vitals의 상호작용 자리는 2024년부터 TTI나 FID가 아니라 INP입니다.
 
 ### ✅ 서버사이드 렌더링을 지원하기 위한 리액트 API를 알고 있나요
 
-`ReactDOMServer` 모듈의 `renderToString`과 `renderToStaticMarkup` API를 사용하여 서버에서 리액트 컴포넌트를 렌더링할 수 있습니다.
+`ReactDOMServer`의 `renderToString`과 `renderToStaticMarkup`으로 문자열 HTML을 만듭니다. 스트리밍 SSR은 Node의 `renderToPipeableStream`, 웹 스트림의 `renderToReadableStream`을 씁니다. App Router에서는 이 API를 직접 호출하기보다 프레임워크가 RSC 페이로드와 HTML 스트림을 만듭니다.
 
 ### ✅ 하이드레이션에 대해 알고 있나요
 
@@ -232,7 +234,7 @@ SEO(검색 엔진 최적화)는 웹사이트나 웹 페이지의 가시성을 �
 
 ### ✅ Next의 렌더링 수행 방식
 
-Next.js는 페이지를 사전 렌더링(Static Generation) 또는 요청 시 렌더링(Server-side Rendering)하는 방식으로 처리합니다. 이러한 방식은 최적화된 초기 로딩 속도와 SEO를 지원합니다.
+Pages Router는 `getStaticProps`(SSG), `revalidate`가 있는 SSG(ISR), `getServerSideProps`(SSR)로 나뉩니다. App Router는 Server Component를 정적으로 렌더하다가, 캐시하지 않는 조회나 `cookies()` / `headers()`가 있으면 요청 시 렌더합니다. Next.js 15부터 `fetch`는 기본으로 Data Cache에 들어가지 않습니다. 13과 14는 `fetch`가 기본 캐시였습니다. 스트리밍은 `loading.tsx`와 Suspense로 느린 부분만 나중에 보냅니다. 라우터별 차이와 캐시 계층은 [Next.js](../Next.js/index.md)에 정리했습니다.
 
 ### ✅ Next를 쓴 이유가 있나요
 
@@ -242,11 +244,11 @@ Next.js는 페이지를 사전 렌더링(Static Generation) 또는 요청 시 �
 
 ### ✅ Next를 구성하는 기본 설정 파일에 대해서 알고 있나요?
 
-Next.js는 `next.config.js` 파일을 사용하여 애플리케이션의 다양한 설정을 조정할 수 있습니다. 여기에는 경로 설정, 환경 변수, 커스텀 Webpack 설정 등이 포함됩니다.
+설정 파일은 `next.config.ts`(또는 `.mjs`, `.js`)입니다. 라우트는 `app/` 또는 `pages/`, 타입은 `tsconfig.json`이 담당합니다. Next.js 16부터 개발과 빌드의 기본 번들러는 Turbopack입니다. Webpack 설정을 유지하려면 `next build --webpack`으로 빠져나와야 하고, 설정만 남은 채 Turbopack 빌드를 하면 실패합니다. 원격 이미지는 `images.remotePatterns`에 등록합니다. `images.domains`는 16에서 deprecated라서 새 설정에 쓰지 않습니다.
 
 ### ✅ 사전 렌더링을 위해 사용해 본 함수가 있나요
 
-`getStaticProps`와 `getStaticPaths` 함수를 사용하여 정적 페이지 생성을 위한 데이터를 가져올 수 있습니다.
+Pages Router에서는 `getStaticProps`와 `getStaticPaths`로 정적 페이지와 동적 경로를 만듭니다. ISR은 `getStaticProps`의 `revalidate`입니다. App Router에는 이 함수가 없고, 동적 경로는 `generateStaticParams`, 시간 기반 재검증은 `export const revalidate` 또는 캐시하는 `fetch`의 `next.revalidate`입니다. 메타는 `generateMetadata`가 만듭니다.
 
 ### ✅ Suspense
 
@@ -267,11 +269,19 @@ Suspense는 비동기 컴포넌트를 사용하여 데이터 로딩을 관리하
 
 ### ✅ LCP가 뭔가요?
 
-LCP(Largest Contentful Paint)는 페이지의 주요 콘텐츠가 로드되는 시간을 측정하는 성능 지표로, 사용자에게 시각적 안정성을 제공합니다.
+LCP(Largest Contentful Paint)는 뷰포트에서 가장 큰 콘텐츠가 그려지기까지 걸린 시간입니다. 로딩 지표이고, 좋은 기준은 현장 데이터 75퍼센타일 2.5초 이하입니다. 시각적 안정성은 LCP가 아니라 CLS가 측정합니다.
 
 ### ✅ FCP가 뭔가요?
 
-FCP(First Contentful Paint)는 페이지의 첫 번째 콘텐츠가 화면에 렌더링되는 시간을 측정하는 지표로, 초기 로딩 속도를 평가하는 데 사용됩니다.
+FCP(First Contentful Paint)는 첫 콘텐츠가 화면에 그려지는 시간입니다. 초기 로딩을 보는 보조 지표이고 Core Web Vitals에는 들어가지 않습니다. 흔히 말하는 좋은 기준은 1.8초 이하입니다.
+
+### ✅ INP가 뭔가요? FID와는 어떤 관계인가요?
+
+INP(Interaction to Next Paint)는 방문 중 상호작용이 다음 페인트를 그리기까지 걸린 시간입니다. 2024년 3월부터 FID를 대체한 Core Web Vital이고, 좋은 기준은 200ms 이하입니다. FID는 첫 입력의 지연만 재서, 처리와 페인트가 느린 페이지도 좋게 나올 수 있었습니다. 이미지, 폰트, 코드 스플리팅까지 포함한 정리와 CLS 기준은 [웹 성능](../Performance/index.md)에 두었습니다.
+
+### ✅ 꼬리 질문) TTFB와 TTI는 Core Web Vital인가요?
+
+둘은 보조 지표입니다. TTFB는 응답 첫 바이트, TTI는 페이지가 안정적으로 조작 가능해지는 시점입니다. 현재 Core Web Vitals는 LCP, INP, CLS입니다.
 
 ### ✅ controlled pattern에 대해서 아나요?
 
